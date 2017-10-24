@@ -1,6 +1,6 @@
 // See http://jszen.blogspot.com/2007/03/how-to-build-simple-calendar-with.html for calendar logic.
 
-import React from 'react';
+import React, { Component } from 'react';
 import ReactDOM from 'react-dom';
 import Button from 'react-bootstrap/lib/Button';
 import FormControl from 'react-bootstrap/lib/FormControl';
@@ -8,14 +8,55 @@ import InputGroup from 'react-bootstrap/lib/InputGroup';
 import Overlay from 'react-bootstrap/lib/Overlay';
 import Popover from 'react-bootstrap/lib/Popover';
 import PropTypes from 'prop-types';
-import createReactClass from 'create-react-class';
 
 let instanceCount = 0;
 
-const CalendarHeader = createReactClass({
-  displayName: 'DatePickerHeader',
+class CalendarHeader extends Component{
 
-  propTypes: {
+  displayingMinMonth() {
+    if (!this.props.minDate) return false;
+
+    const displayDate = new Date(this.props.displayDate);
+    const minDate = new Date(this.props.minDate);
+    return minDate.getFullYear() == displayDate.getFullYear() && minDate.getMonth() == displayDate.getMonth();
+  }
+
+  displayingMaxMonth() {
+    if (!this.props.maxDate) return false;
+
+    const displayDate = new Date(this.props.displayDate);
+    const maxDate = new Date(this.props.maxDate);
+    return maxDate.getFullYear() == displayDate.getFullYear() && maxDate.getMonth() == displayDate.getMonth();
+  }
+
+  handleClickPrevious() {
+    const newDisplayDate = new Date(this.props.displayDate);
+    newDisplayDate.setDate(1);
+    newDisplayDate.setMonth(newDisplayDate.getMonth() - 1);
+    this.props.onChange(newDisplayDate);
+  }
+
+  handleClickNext() {
+    const newDisplayDate = new Date(this.props.displayDate);
+    newDisplayDate.setDate(1);
+    newDisplayDate.setMonth(newDisplayDate.getMonth() + 1);
+    this.props.onChange(newDisplayDate);
+  }
+
+  render() {
+    return <div className="text-center">
+      <div className="text-muted pull-left datepicker-previous-wrapper" onClick={this.handleClickPrevious.bind(this)} style={{cursor: 'pointer'}}>
+        {this.displayingMinMonth.call(this) ? null : this.props.previousButtonElement}
+      </div>
+      <span>{this.props.monthLabels[this.props.displayDate.getMonth()]} {this.props.displayDate.getFullYear()}</span>
+      <div className="text-muted pull-right datepicker-next-wrapper" onClick={this.handleClickNext.bind(this)} style={{cursor: 'pointer'}}>
+        {this.displayingMaxMonth.call(this) ? null : this.props.nextButtonElement}
+      </div>
+    </div>;
+  }
+}
+
+CalendarHeader.propTypes = {
     displayDate: PropTypes.object.isRequired,
     minDate: PropTypes.string,
     maxDate: PropTypes.string,
@@ -29,82 +70,23 @@ const CalendarHeader = createReactClass({
       PropTypes.string,
       PropTypes.object
     ]).isRequired,
-  },
-
-  displayingMinMonth() {
-    if (!this.props.minDate) return false;
-
-    const displayDate = new Date(this.props.displayDate);
-    const minDate = new Date(this.props.minDate);
-    return minDate.getFullYear() == displayDate.getFullYear() && minDate.getMonth() == displayDate.getMonth();
-  },
-
-  displayingMaxMonth() {
-    if (!this.props.maxDate) return false;
-
-    const displayDate = new Date(this.props.displayDate);
-    const maxDate = new Date(this.props.maxDate);
-    return maxDate.getFullYear() == displayDate.getFullYear() && maxDate.getMonth() == displayDate.getMonth();
-  },
-
-  handleClickPrevious() {
-    const newDisplayDate = new Date(this.props.displayDate);
-    newDisplayDate.setDate(1);
-    newDisplayDate.setMonth(newDisplayDate.getMonth() - 1);
-    this.props.onChange(newDisplayDate);
-  },
-
-  handleClickNext() {
-    const newDisplayDate = new Date(this.props.displayDate);
-    newDisplayDate.setDate(1);
-    newDisplayDate.setMonth(newDisplayDate.getMonth() + 1);
-    this.props.onChange(newDisplayDate);
-  },
-
-  render() {
-    return <div className="text-center">
-      <div className="text-muted pull-left datepicker-previous-wrapper" onClick={this.handleClickPrevious} style={{cursor: 'pointer'}}>
-        {this.displayingMinMonth() ? null : this.props.previousButtonElement}
-      </div>
-      <span>{this.props.monthLabels[this.props.displayDate.getMonth()]} {this.props.displayDate.getFullYear()}</span>
-      <div className="text-muted pull-right datepicker-next-wrapper" onClick={this.handleClickNext} style={{cursor: 'pointer'}}>
-        {this.displayingMaxMonth() ? null : this.props.nextButtonElement}
-      </div>
-    </div>;
-  }
-});
+};
 
 const daysInMonth = [31, 28, 31, 30, 31, 30, 31, 31, 30, 31, 30, 31];
 
-const Calendar = createReactClass({
-  displayName: 'DatePickerCalendar',
-
-  propTypes: {
-    selectedDate: PropTypes.object,
-    displayDate: PropTypes.object.isRequired,
-    minDate: PropTypes.string,
-    maxDate: PropTypes.string,
-    onChange: PropTypes.func.isRequired,
-    dayLabels: PropTypes.array.isRequired,
-    cellPadding: PropTypes.string.isRequired,
-    weekStartsOn: PropTypes.number,
-    showTodayButton: PropTypes.bool,
-    todayButtonLabel: PropTypes.string,
-    roundedCorners: PropTypes.bool,
-    showWeeks: PropTypes.bool
-  },
+class Calendar extends Component {  
 
   handleClick(e) {
     const day = e.currentTarget.getAttribute('data-day');
     const newSelectedDate = this.setTimeToNoon(new Date(this.props.displayDate));
     newSelectedDate.setDate(day);
     this.props.onChange(newSelectedDate);
-  },
+  }
 
   handleClickToday() {
     const newSelectedDate = this.setTimeToNoon(new Date());
     this.props.onChange(newSelectedDate);
-  },
+  }
 
   setTimeToNoon(date) {
     date.setHours(12);
@@ -112,7 +94,7 @@ const Calendar = createReactClass({
     date.setSeconds(0);
     date.setMilliseconds(0);
     return date;
-  },
+  }
 
   getWeekNumber(date){
     const target  = new Date(date.valueOf());
@@ -124,7 +106,7 @@ const Calendar = createReactClass({
       target.setMonth(0, 1 + ((4 - target.getDay()) + 7) % 7);
     }
     return 1 + Math.ceil((firstThursday - target) / 604800000);
-  },
+  }
 
   render() {
     const currentDate = this.setTimeToNoon(new Date());
@@ -158,7 +140,7 @@ const Calendar = createReactClass({
           const date = new Date(year, month, day, 12, 0, 0, 0).toISOString();
           const beforeMinDate = minDate && Date.parse(date) < Date.parse(minDate);
           const afterMinDate = maxDate && Date.parse(date) > Date.parse(maxDate);
-          let clickHandler = this.handleClick;
+          let clickHandler = this.handleClick.bind(this);
           const style = { cursor: 'pointer', padding: this.props.cellPadding, borderRadius: this.props.roundedCorners ? 5 : 0 };
 
           if (beforeMinDate || afterMinDate) {
@@ -235,7 +217,7 @@ const Calendar = createReactClass({
               block
               bsSize="xsmall"
               className="u-today-button"
-              onClick={this.handleClickToday}>
+              onClick={this.handleClickToday.bind(this)}>
               {this.props.todayButtonLabel}
             </Button>
           </td>
@@ -243,125 +225,62 @@ const Calendar = createReactClass({
       </tfoot>}
     </table>;
   }
-});
+}
 
-export default createReactClass({
-  displayName: 'DatePicker',
-
-  propTypes: {
-    defaultValue: PropTypes.string,
-    value: PropTypes.string,
-    required: PropTypes.bool,
-    className: PropTypes.string,
-    style: PropTypes.object,
+Calendar.propTypes = {
+    selectedDate: PropTypes.object,
+    displayDate: PropTypes.object.isRequired,
     minDate: PropTypes.string,
     maxDate: PropTypes.string,
-    cellPadding: PropTypes.string,
-    autoComplete: PropTypes.string,
-    placeholder: PropTypes.string,
-    dayLabels: PropTypes.array,
-    monthLabels: PropTypes.array,
-    onChange: PropTypes.func,
-    onClear: PropTypes.func,
-    onBlur: PropTypes.func,
-    onFocus: PropTypes.func,
-    autoFocus: PropTypes.bool,
-    disabled: PropTypes.bool,
-    weekStartsOnMonday: (props, propName, componentName) => {
-      if (props[propName]) {
-        return new Error(`Prop '${propName}' supplied to '${componentName}' is obsolete. Use 'weekStartsOn' instead.`);
-      }
-    },
+    onChange: PropTypes.func.isRequired,
+    dayLabels: PropTypes.array.isRequired,
+    cellPadding: PropTypes.string.isRequired,
     weekStartsOn: PropTypes.number,
-    clearButtonElement: PropTypes.oneOfType([
-      PropTypes.string,
-      PropTypes.object
-    ]),
-    showClearButton: PropTypes.bool,
-    previousButtonElement: PropTypes.oneOfType([
-      PropTypes.string,
-      PropTypes.object
-    ]),
-    nextButtonElement: PropTypes.oneOfType([
-      PropTypes.string,
-      PropTypes.object
-    ]),
-    calendarPlacement: PropTypes.oneOfType([
-      PropTypes.string,
-      PropTypes.func
-    ]),
-    dateFormat: PropTypes.string, // 'MM/DD/YYYY', 'DD/MM/YYYY', 'YYYY/MM/DD', 'DD-MM-YYYY'
-    bsClass: PropTypes.string,
-    bsSize: PropTypes.string,
-    calendarContainer: PropTypes.object,
-    id: PropTypes.string,
-    name: PropTypes.string,
     showTodayButton: PropTypes.bool,
     todayButtonLabel: PropTypes.string,
-    instanceCount: PropTypes.number,
-    customControl: PropTypes.object,
     roundedCorners: PropTypes.bool,
-    showWeeks: PropTypes.bool,
-    children: PropTypes.oneOfType([
-      PropTypes.arrayOf(PropTypes.node),
-      PropTypes.node
+    showWeeks: PropTypes.bool
+}
 
-    ]),
-    onInvalid: PropTypes.func,
-    noValidate: PropTypes.bool
-  },
+export default class DatePicker extends Component{
 
-  getDefaultProps() {
-    const language = typeof window !== 'undefined' && window.navigator ? (window.navigator.userLanguage || window.navigator.language || '').toLowerCase() : '';
-    const dateFormat = !language || language === 'en-us' ? 'MM/DD/YYYY' : 'DD/MM/YYYY';
-    return {
-      cellPadding: '5px',
-      dayLabels: ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'],
-      monthLabels: ['January', 'February', 'March', 'April',
-        'May', 'June', 'July', 'August', 'September',
-        'October', 'November', 'December'],
-      clearButtonElement: '×',
-      previousButtonElement: '<',
-      nextButtonElement: '>',
-      calendarPlacement: 'bottom',
-      dateFormat: dateFormat,
-      showClearButton: true,
-      autoFocus: false,
-      disabled: false,
-      showTodayButton: false,
-      todayButtonLabel: 'Today',
-      autoComplete: 'on',
-      showWeeks: false,
-      instanceCount: instanceCount++,
-      style: {
-        width: '100%'
-      },
-      roundedCorners: false,
-      noValidate: false
-    };
-  },
+  constructor(props){
+    super(props)
 
-  getInitialState() {
+    this.makeDateValues = this.makeDateValues.bind(this);
+    this.clear = this.clear.bind(this);
+    this.handleHide = this.handleHide.bind(this);
+    this.handleKeyDown = this.handleKeyDown.bind(this);
+    this.handleFocus = this.handleFocus.bind(this);
+    this.handleBlur = this.handleBlur.bind(this);
+    this.getValue = this.getValue.bind(this);
+    this.getFormattedValue = this.getFormattedValue.bind(this);
+    this.getCalendarPlacement = this.getCalendarPlacement.bind(this);
+    this.makeInputValueString = this.makeInputValueString.bind(this);
+    this.handleBadInput = this.handleBadInput.bind(this);
+    this.handleInputChange = this.handleInputChange.bind(this);
+    this.onChangeMonth = this.onChangeMonth.bind(this);
+    this.onChangeDate = this.onChangeDate.bind(this);
+
     if (this.props.value && this.props.defaultValue) {
       throw new Error('Conflicting DatePicker properties \'value\' and \'defaultValue\'');
     }
-    const state = this.makeDateValues(this.props.value || this.props.defaultValue);
+    this.state = this.makeDateValues(this.props.value || this.props.defaultValue);
     if (this.props.weekStartsOn > 1) {
-      state.dayLabels = this.props.dayLabels
+      this.state.dayLabels = this.props.dayLabels
         .slice(this.props.weekStartsOn)
         .concat(this.props.dayLabels.slice(0, this.props.weekStartsOn));
     } else if (this.props.weekStartsOn === 1) {
-      state.dayLabels = this.props.dayLabels.slice(1).concat(this.props.dayLabels.slice(0,1));
+      this.state.dayLabels = this.props.dayLabels.slice(1).concat(this.props.dayLabels.slice(0,1));
     } else {
-      state.dayLabels = this.props.dayLabels;
+      this.state.dayLabels = this.props.dayLabels;
     }
-    state.focused = false;
-    state.inputFocused = false;
-    state.placeholder = this.props.placeholder || this.props.dateFormat;
-    state.separator = this.props.dateFormat.match(/[^A-Z]/)[0];
-    return state;
-  },
-
+    this.state.focused = false;
+    this.state.inputFocused = false;
+    this.state.placeholder = this.props.placeholder || this.props.dateFormat;
+    this.state.separator = this.props.dateFormat.match(/[^A-Z]/)[0];    
+  }
+  
   makeDateValues(isoString) {
     let displayDate;
     const selectedDate = isoString ? new Date(`${isoString.slice(0,10)}T12:00:00.000Z`) : null;
@@ -388,7 +307,7 @@ export default createReactClass({
       selectedDate: selectedDate,
       inputValue: inputValue
     };
-  },
+  }
 
   clear() {
     if (this.props.onClear) {
@@ -401,7 +320,7 @@ export default createReactClass({
     if (this.props.onChange) {
       this.props.onChange(null, null);
     }
-  },
+  }
 
   handleHide() {
     if (this.state.inputFocused) {
@@ -416,7 +335,7 @@ export default createReactClass({
       ReactDOM.findDOMNode(this.refs.hiddenInput).dispatchEvent(event);
       this.props.onBlur(event);
     }
-  },
+  }
 
   handleKeyDown(e) {
     if (e.which === 9 && this.state.inputFocused) {
@@ -431,7 +350,7 @@ export default createReactClass({
         this.props.onBlur(event);
       }
     }
-  },
+  }
 
   handleFocus() {
     if (this.state.focused === true) {
@@ -452,25 +371,25 @@ export default createReactClass({
       ReactDOM.findDOMNode(this.refs.hiddenInput).dispatchEvent(event);
       this.props.onFocus(event);
     }
-  },
+  }
 
   handleBlur() {
     this.setState({
       inputFocused: false
     });
-  },
+  }
 
-  shouldComponentUpdate: function(nextProps, nextState) {
+  shouldComponentUpdate (nextProps, nextState) {
     return !(this.state.inputFocused === true && nextState.inputFocused === false);
-  },
+  }
 
   getValue() {
     return this.state.selectedDate ? this.state.selectedDate.toISOString() : null;
-  },
+  }
 
   getFormattedValue() {
     return this.state.displayDate ? this.state.inputValue : null;
-  },
+  }
 
   getCalendarPlacement() {
     const tag = Object.prototype.toString.call(this.props.calendarPlacement);
@@ -481,7 +400,7 @@ export default createReactClass({
     else {
       return this.props.calendarPlacement;
     }
-  },
+  }
 
   makeInputValueString(date) {
     const month = date.getMonth() + 1;
@@ -498,7 +417,7 @@ export default createReactClass({
     else {
       return date.getFullYear() + separator + (month > 9 ? month : `0${month}`) + separator + (day > 9 ? day : `0${day}`);
     }
-  },
+  }
 
   handleBadInput(originalValue) {
     const parts = originalValue.replace(new RegExp(`[^0-9${this.state.separator}]`), '').split(this.state.separator);
@@ -530,7 +449,7 @@ export default createReactClass({
     this.setState({
       inputValue: parts.join(this.state.separator)
     });
-  },
+  }
 
   handleInputChange() {
 
@@ -592,13 +511,13 @@ export default createReactClass({
     this.setState({
       inputValue: inputValue
     });
-  },
+  }
 
   onChangeMonth(newDisplayDate) {
     this.setState({
       displayDate: newDisplayDate
     });
-  },
+  }
 
   onChangeDate(newSelectedDate) {
     const inputValue = this.makeInputValueString(newSelectedDate);
@@ -620,14 +539,14 @@ export default createReactClass({
     if (this.props.onChange) {
       this.props.onChange(newSelectedDate.toISOString(), inputValue);
     }
-  },
+  }
 
   componentWillReceiveProps(newProps) {
     const value = newProps.value;
     if (this.getValue() !== value) {
       this.setState(this.makeDateValues(value));
     }
-  },
+  }
 
   render() {
     const calendarHeader = <CalendarHeader
@@ -719,4 +638,96 @@ export default createReactClass({
       {this.props.children}
     </InputGroup>;
   }
-});
+}
+
+DatePicker.propTypes = {
+    defaultValue: PropTypes.string,
+    value: PropTypes.string,
+    required: PropTypes.bool,
+    className: PropTypes.string,
+    style: PropTypes.object,
+    minDate: PropTypes.string,
+    maxDate: PropTypes.string,
+    cellPadding: PropTypes.string,
+    autoComplete: PropTypes.string,
+    placeholder: PropTypes.string,
+    dayLabels: PropTypes.array,
+    monthLabels: PropTypes.array,
+    onChange: PropTypes.func,
+    onClear: PropTypes.func,
+    onBlur: PropTypes.func,
+    onFocus: PropTypes.func,
+    autoFocus: PropTypes.bool,
+    disabled: PropTypes.bool,
+    weekStartsOnMonday: (props, propName, componentName) => {
+      if (props[propName]) {
+        return new Error(`Prop '${propName}' supplied to '${componentName}' is obsolete. Use 'weekStartsOn' instead.`);
+      }
+    },
+    weekStartsOn: PropTypes.number,
+    clearButtonElement: PropTypes.oneOfType([
+      PropTypes.string,
+      PropTypes.object
+    ]),
+    showClearButton: PropTypes.bool,
+    previousButtonElement: PropTypes.oneOfType([
+      PropTypes.string,
+      PropTypes.object
+    ]),
+    nextButtonElement: PropTypes.oneOfType([
+      PropTypes.string,
+      PropTypes.object
+    ]),
+    calendarPlacement: PropTypes.oneOfType([
+      PropTypes.string,
+      PropTypes.func
+    ]),
+    dateFormat: PropTypes.string, // 'MM/DD/YYYY', 'DD/MM/YYYY', 'YYYY/MM/DD', 'DD-MM-YYYY'
+    bsClass: PropTypes.string,
+    bsSize: PropTypes.string,
+    calendarContainer: PropTypes.object,
+    id: PropTypes.string,
+    name: PropTypes.string,
+    showTodayButton: PropTypes.bool,
+    todayButtonLabel: PropTypes.string,
+    instanceCount: PropTypes.number,
+    customControl: PropTypes.object,
+    roundedCorners: PropTypes.bool,
+    showWeeks: PropTypes.bool,
+    children: PropTypes.oneOfType([
+      PropTypes.arrayOf(PropTypes.node),
+      PropTypes.node
+
+    ]),
+    onInvalid: PropTypes.func,
+    noValidate: PropTypes.bool
+}
+
+const language = typeof window !== 'undefined' && window.navigator ? (window.navigator.userLanguage || window.navigator.language || '').toLowerCase() : '';
+const dateFormat = !language || language === 'en-us' ? 'MM/DD/YYYY' : 'DD/MM/YYYY';
+
+DatePicker.defaultProps ={
+  cellPadding: '5px',
+  dayLabels: ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'],
+  monthLabels: ['January', 'February', 'March', 'April',
+    'May', 'June', 'July', 'August', 'September',
+    'October', 'November', 'December'],
+  clearButtonElement: '×',
+  previousButtonElement: '<',
+  nextButtonElement: '>',
+  calendarPlacement: 'bottom',
+  dateFormat: dateFormat,
+  showClearButton: true,
+  autoFocus: false,
+  disabled: false,
+  showTodayButton: false,
+  todayButtonLabel: 'Today',
+  autoComplete: 'on',
+  showWeeks: false,
+  instanceCount: instanceCount++,
+  style: {
+    width: '100%'
+  },
+  roundedCorners: false,
+  noValidate: false
+}
